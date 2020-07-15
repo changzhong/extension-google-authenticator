@@ -3,7 +3,7 @@
 
 ##### 1. composer 安装扩展
 ```
- composer request changzhong/extension-google-authenticator
+ composer require changzhong/extension-google-authenticator
 ```
 
 ##### 2. 在后台》开发工具》扩展中启用,登录页面有个js动画，如果需要可以点扩展上面的导入
