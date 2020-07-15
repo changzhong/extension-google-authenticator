@@ -12,6 +12,7 @@ use Dcat\Admin\Layout\Row;
 use Dcat\Admin\Widgets\Box;
 use Illuminate\Http\Request;
 use Dcat\Admin\Controllers\AuthController as BaseAuthController;
+use Illuminate\Support\Facades\DB;
 
 class AuthController extends BaseAuthController
 {
@@ -76,7 +77,7 @@ class AuthController extends BaseAuthController
         $secret = auth('admin')->user()->google_auth ?? '';
         $createSecret = google_create_secret(32, $secret, Admin::user()->username);
 
-        $box = new Box('Google 验证绑定', view($this->googleView, ['createSecret' => $createSecret]));
+        $box = new Box('Google 验证绑定', view($this->googleView, ['createSecret' => $createSecret, 'id' => Admin::user()->id]));
         $box->style('info');
         return $box->render();
     }
@@ -137,6 +138,7 @@ class AuthController extends BaseAuthController
     public function setGoogleAuth(Request $request)
     {
         $onecode = (string)$request->onecode;
+        $id = $request->id;
         if (empty($onecode) && strlen($onecode) != 6) {
             admin_toastr('请正确输入手机上google验证码 !', 'error');
             return response()->json(['message' => '请正确输入手机上google验证码 !']);
@@ -150,7 +152,7 @@ class AuthController extends BaseAuthController
             return response()->json(['message' => '验证码错误，请输入正确的验证码 !', 'status' => FALSE,]);
         }
 
-        $admi_user = auth('admin')->user();
+        $admi_user = Administrator::query()->where('id', $id)->first();
         $admi_user->google_auth = $google;
         $admi_user->is_open_google_auth = $is_open_google_auth;
         $admi_user->save();

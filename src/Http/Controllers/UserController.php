@@ -122,7 +122,7 @@ class UserController extends \Dcat\Admin\Controllers\UserController
     {
         $secret = $user->google_auth ?? '';
         $createSecret = google_create_secret(32,$secret, $user->username);
-        $box = new Box('Google 验证绑定',view(GoogleAuthenticator::NAME.'::google', ['createSecret' => $createSecret]) );
+        $box = new Box('Google 验证绑定',view(GoogleAuthenticator::NAME.'::google', ['createSecret' => $createSecret, 'id' => $user->id]) );
         $box->style('info');
         return $box->render();
 
