@@ -8,7 +8,12 @@
 
 ##### 2. 在后台》开发工具》扩展中启用,登录页面有个js动画，如果需要可以点扩展上面的导入
 
-#### 3. 更改app/Admin/Controllers/AuthController.php
+#### 3. 更改数据库 
+```
+php artisan migrate
+```
+
+#### 4. 更改app/Admin/Controllers/AuthController.php
 ```php
 <?php
 
