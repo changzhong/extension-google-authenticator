@@ -1,0 +1,28 @@
+{
+    "name": "changzhong/extension-google-authenticator",
+    "description": "dcat-admin extension google-authenticator",
+    "type": "library",
+    "keywords": ["dcat-admin", "extension"],
+    "homepage": "https://github.com/changzhong/extension-google-authenticator",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "chang",
+            "email": "632867905@qq.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.1.0",
+        "dcat/laravel-admin": "*",
+        "simplesoftwareio/simple-qrcode": "^2.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Dcat\\Admin\\Extension\\GoogleAuthenticator\\": "src/"
+        },
+         "files": [
+            "src/bootstrap.php",
+             "src/helpers.php"
+        ]
+    }
+}
