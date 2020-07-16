@@ -181,7 +181,7 @@ class AuthController extends BaseAuthController
                 return $form->model()->password;
             });
 
-        $form->setAction(admin_url('auth/setting'));
+        $form->action(admin_url('auth/setting'));
 
         $form->ignore(['password_confirmation']);
 
