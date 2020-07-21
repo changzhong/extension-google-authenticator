@@ -168,33 +168,54 @@ class AuthController extends BaseAuthController
      */
     protected function settingForm()
     {
-        $class = config('admin.database.users_model');
-
-        $form = new Form(new $class());
-
-        $form->display('username', trans('admin.username'));
-        $form->text('name', trans('admin.name'))->rules('required');
-        $form->image('avatar', trans('admin.avatar'));
-        $form->password('password', trans('admin.password'))->rules('confirmed|required');
-        $form->password('password_confirmation', trans('admin.password_confirmation'))->rules('required')
-            ->default(function ($form) {
-                return $form->model()->password;
-            });
+        $form = new Form(new \Dcat\Admin\Models\Repositories\Administrator());
 
         $form->action(admin_url('auth/setting'));
 
-        $form->ignore(['password_confirmation']);
+        $form->disableCreatingCheck();
+        $form->disableEditingCheck();
+        $form->disableViewCheck();
+
+        $form->tools(function (Form\Tools $tools) {
+            $tools->disableView();
+            $tools->disableDelete();
+        });
+
+        $form->display('username', trans('admin.username'));
+        $form->text('name', trans('admin.name'))->required();
+        $form->image('avatar', trans('admin.avatar'));
+
+        $form->password('old_password', trans('admin.old_password'));
+
+        $form->password('password', trans('admin.password'))
+            ->minLength(5)
+            ->maxLength(20)
+            ->customFormat(function ($v) {
+                if ($v == $this->password) {
+                    return;
+                }
+
+                return $v;
+            });
+        $form->password('password_confirmation', trans('admin.password_confirmation'))->same('password');
+
+        $form->ignore(['password_confirmation', 'old_password']);
 
         $form->saving(function (Form $form) {
             if ($form->password && $form->model()->password != $form->password) {
                 $form->password = bcrypt($form->password);
             }
+
+            if (! $form->password) {
+                $form->deleteInput('password');
+            }
         });
 
-        $form->saved(function () {
-            admin_toastr(trans('admin.update_succeeded'));
-
-            return redirect(admin_url('auth/setting'));
+        $form->saved(function (Form $form) {
+            return $form->redirect(
+                admin_url('auth/setting'),
+                trans('admin.update_succeeded')
+            );
         });
 
         return $form;

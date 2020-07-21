@@ -6,7 +6,7 @@
  composer require changzhong/extension-google-authenticator
 ```
 
-##### 2. 在后台》开发工具》扩展中启用,登录页面有个js动画，如果需要可以点扩展上面的导入
+##### 2. 在后台》开发工具》扩展中启用,点扩展上面的导入
 
 #### 3. 更改数据库 
 ```
@@ -19,8 +19,8 @@ php artisan migrate
 
 namespace App\Admin\Controllers;
 
-use Dcat\Admin\Controllers\AuthController as BaseAuthController;
-//use Dcat\Admin\Extension\GoogleAuthenticator\Http\Controllers\AuthController as BaseAuthController;
+//use Dcat\Admin\Controllers\AuthController as BaseAuthController;
+use Dcat\Admin\Extension\GoogleAuthenticator\Http\Controllers\AuthController as BaseAuthController;
 
 class AuthController extends BaseAuthController
 {
