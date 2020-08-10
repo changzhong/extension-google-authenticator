@@ -143,6 +143,7 @@
                     </fieldset>
 
 
+                    @if(config('admin.auth.remember'))
                     <div class="form-group d-flex justify-content-between align-items-center">
                         <div class="text-left">
                             <fieldset class="checkbox">
@@ -159,6 +160,7 @@
                             </fieldset>
                         </div>
                     </div>
+                    @endif
                     <button type="submit" class="btn btn-primary float-right login-btn">
 
                         {{ __('admin.login') }}
