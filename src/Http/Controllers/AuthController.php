@@ -131,26 +131,27 @@ class AuthController extends BaseAuthController
         if (google_check_code((string)$google, $onecode, 1)) {
             return response()->json(['message' => '验证码测试通过 !', 'status' => TRUE,]);
         } else {
-            return response()->json(['message' => '验证码错误，请输入正确的验证码 !', 'status' => FALSE,]);
+            return response()->json(['message' => '验证码错误，请输入正确的谷歌验证码 !'.$onecode, 'status' => FALSE,]);
         }
     }
 
     public function setGoogleAuth(Request $request)
     {
-        $onecode = (string)$request->onecode;
-        $id = $request->id;
-        if (empty($onecode) && strlen($onecode) != 6) {
-            admin_toastr('请正确输入手机上google验证码 !', 'error');
-            return response()->json(['message' => '请正确输入手机上google验证码 !']);
-        }
         $is_open_google_auth = $request->get('is_open_google_auth');
+        $id = $request->id;
         $google = $request->google;
+        $onecode = (string)$request->onecode;
 
-        // 验证验证码和密钥是否相同
-        if (!google_check_code((string)$google, $onecode, 1)) {
-            admin_toastr('验证码错误，请输入正确的验证码 !', 'error');
-            return response()->json(['message' => '验证码错误，请输入正确的验证码 !', 'status' => FALSE,]);
-        }
+//        if (empty($onecode) && strlen($onecode) != 6) {
+//            admin_toastr('请正确输入手机上google验证码 !', 'error');
+//            return response()->json(['message' => '请正确输入手机上google验证码 !']);
+//        }
+//
+//        // 验证验证码和密钥是否相同
+//        if (!google_check_code((string)$google, $onecode, 1)) {
+//            admin_toastr('验证码错误，请输入正确的验证码 !', 'error');
+//            return response()->json(['message' => '验证码错误，请输入正确的验证码 !', 'status' => FALSE,]);
+//        }
 
         $admi_user = Administrator::query()->where('id', $id)->first();
         $admi_user->google_auth = $google;
