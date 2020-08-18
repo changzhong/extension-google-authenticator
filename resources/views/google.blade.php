@@ -2,54 +2,33 @@
     <div class="">
         <p class="">两步验证</p>
         <p>请下载 Google 的两步验证器。</p>
-        <p><i class="fa fa-android"></i><a id="android"
-                                           href="https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2">&nbsp;Android</a>
+        <p>
+            <i class="fa fa-android"></i>
+            <a id="android" href="https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2">&nbsp;Android</a>
         </p>
-        <p><i class="fa fa-apple"></i><a id="ios"
-                                         href="https://itunes.apple.com/cn/app/google-authenticator/id388497605?mt=8">&nbsp;iOS</a>
+        <p>
+            <i class="fa fa-apple"></i>
+            <a id="ios" href="https://itunes.apple.com/cn/app/google-authenticator/id388497605?mt=8">&nbsp;iOS</a>
         </p>
 
         <p>如果遇到问题，请参考：<a href="https://phpartisan.cn/specials/5" target="_blank">Google Authenticator帮助文档</a></p>
 
-        <p>在没有测试完成绑定成功之前请不要启用。</p>
-        <p>当前设置：@if(auth('admin')->user()->is_open_google_auth) <code> 要求验证 </code> @else <code> 不要求验证 </code>  @endif
-        </p>
         <p>当前服务器时间：<span class="text-red" id="txt"></span></p>
-        <div class="form-group form-group-label control-highlight-custom dropdown control-highlight">
-            <label class="floating-label" for="ga-enable">验证设置</label>
-            <button type="button" id="ga-enable" class="form-control maxwidth-edit" data-toggle="dropdown"
-                    value="{{auth('admin')->user()->is_open_google_auth}}">
-                @if(auth('admin')->user()->is_open_google_auth)  要求验证 @else 不要求验证  @endif
-            </button>
-
-            <ul class="dropdown-menu text-center"
-                style="width: 100%;border-radius: unset;box-shadow: 0 6px 12px rgba(0,0,0,.175);">
-                <li><a class="no_auth">不要求</a></li>
-                <li><a class="yes_auth">要求验证</a></li>
-            </ul>
-        </div>
-        <div class="form-group form-group-label">
-            <div class="text-center">
-                <div>
-                    {!! QrCode::encoding('UTF-8')->size(200)->margin(1)->errorCorrection('H')->generate($createSecret["codeurl"]); !!}
+        @if($google_auth)
+            <div class="form-group form-group-label">
+                <div class="text-center">
+                    <div>
+                        {!! QrCode::encoding('UTF-8')->size(200)->margin(1)->errorCorrection('H')->generate($createSecret["codeurl"]); !!}
+                    </div>
+                    <h4 class="">
+                        密钥：<span class="text-red">{{ $createSecret["secret"] }}</span>
+                    </h4>
                 </div>
-                <h4 class="">
-                    密钥：<span class="text-red">{{ $createSecret["secret"] }}</span>
-                </h4>
             </div>
-        </div>
-        <div class="form-group form-group-label">
-            <label class="floating-label" for="code">测试一下</label>
-            <input type="hidden" name="google" value="{{ $createSecret['secret'] }}"/>
-            <input name="onecode" class="form-control" type="text" placeholder="请输入扫描后手机显示的6位验证码"
-                   value="{{ old('onecode') }}"/>
-        </div>
-    </div>
-    <div class="form-group text-center">
-        <div class="">
-            <button class="btn btn-default test">测试</button>
-            <button class="btn btn-primary success">设置</button>
-        </div>
+        @else
+            <h4 class="text-red">未绑定谷歌验证</h4>
+        @endif
+
     </div>
 </div>
 

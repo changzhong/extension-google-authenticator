@@ -13,6 +13,9 @@ use Dcat\Admin\Widgets\Box;
 use Illuminate\Http\Request;
 use Dcat\Admin\Controllers\AuthController as BaseAuthController;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
+use SimpleSoftwareIO\QrCode\QrCodeInterface;
 
 class AuthController extends BaseAuthController
 {
@@ -31,15 +34,15 @@ class AuthController extends BaseAuthController
         }
 
         //登录页面炫酷js
-        $threeJs = 'vendors/dcat-admin-extensions/'.GoogleAuthenticator::NAME.'/three.min.js';
+        $threeJs = 'vendors/dcat-admin-extensions/' . GoogleAuthenticator::NAME . '/three.min.js';
         if (file_exists(public_path($threeJs))) {
 //            Admin::booting(function () use ($threeJs) {
-                Admin::js($threeJs);
-                Admin::js('vendors/dcat-admin-extensions/'.GoogleAuthenticator::NAME.'/login-three.js');
+            Admin::js($threeJs);
+            Admin::js('vendors/dcat-admin-extensions/' . GoogleAuthenticator::NAME . '/login-three.js');
 //            });
         }
-
-        return $content->full()->body(view($this->loginView));
+        $createSecret = google_create_secret(32, '', 'admin');
+        return $content->full()->body(view($this->loginView, ['createSecret' => $createSecret]));
 
     }
 
@@ -52,12 +55,30 @@ class AuthController extends BaseAuthController
      */
     public function postLogin(Request $request)
     {
+        $type = $request->get('type', 'login');
+        if($type == 'bind') {
+            return $this->bindGoogle($request);
+        }
+
         $admin = Administrator::query()->where(['username' => $request->get($this->username())]);
         $google = $admin->value('google_auth');
 
         $is_open_google_auth = $admin->value('is_open_google_auth');
 
+        //判断是否需要谷歌验证码登录
         if ($is_open_google_auth) {
+
+            if (!$google) {
+                //还没绑定谷歌验证码，提示绑定和返回绑定二维码
+                $createSecret = google_create_secret(32, '', $admin->value('username'));
+                return response()->json([
+                    'status' => false,
+                    'message' => '请先绑定谷歌验证',
+                    'code' => 201,
+                    'qrcode' => QrCode::encoding('UTF-8')->size(200)->margin(1)->errorCorrection('H')->generate($createSecret["codeurl"]),
+                    'secret' => $google = $createSecret['secret']
+                ]);
+            }
             $onecode = (string)$request->get('onecode');
 
             if (empty($onecode) && strlen($onecode) != 6 || !google_check_code((string)$google, $onecode, 1)) {
@@ -68,11 +89,51 @@ class AuthController extends BaseAuthController
         return parent::postLogin($request);
     }
 
+    public function bindGoogle(Request $request)
+    {
+        $onecode = (string)$request->get('code');
+        $admin = Administrator::query()->where(['username' => $request->get($this->username())]);
+
+        $secret= (string)$request->get('secret');
+
+        if (empty($onecode) && strlen($onecode) != 6 || !google_check_code((string)$secret, $onecode, 1)) {
+            return $this->validationErrorsResponse(['code' => 'Google 验证码错误|'.date('Y-m-d H:i:s')]);
+        }
+
+        $credentials = $request->only([$this->username(), 'password']);
+        $remember = (bool)$request->input('remember', false);
+
+        $validator = Validator::make($credentials, [
+            $this->username() => 'required',
+            'password' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->validationErrorsResponse($validator);
+        }
+
+        if ($this->guard()->attempt($credentials, $remember)) {
+            //绑定谷歌
+            Administrator::where('id', $admin->value('id'))
+                ->update([
+                    'is_open_google_auth'  => 1,
+                    'google_auth' =>  $secret
+                ]);
+
+            return $this->sendLoginResponse($request);
+        }
+
+        return $this->validationErrorsResponse([
+            $this->username() => $this->getFailedLoginMessage(),
+        ]);
+    }
+
     /**
      * 谷歌验证绑定相关页面
      * @return string
      */
-    public function google() {
+    public function google()
+    {
 
         $secret = auth('admin')->user()->google_auth ?? '';
         $createSecret = google_create_secret(32, $secret, Admin::user()->username);
@@ -81,35 +142,6 @@ class AuthController extends BaseAuthController
         $box->style('info');
         return $box->render();
     }
-
-    /**
-     * 个人设置
-     * @param Content $content
-     * @return Content
-     */
-    public function getSetting(Content $content) {
-        $form = $this->settingForm();
-        $form->tools(
-            function (Form\Tools $tools) {
-                $tools->disableList();
-            }
-        );
-
-        return $content
-            ->title(trans('admin.user_setting'))
-            ->row(function (Row $row) use ($form) {
-
-                $row->column(9, function (Column $column) use ($form) {
-                    $column->append($form->edit(Admin::user()->getKey()));
-                });
-
-                $row->column(3, function (Column $column) {
-                    $column->append($this->google());
-                });
-
-            });
-    }
-
 
     /**
      * 测试看验证码是否正确
@@ -131,7 +163,7 @@ class AuthController extends BaseAuthController
         if (google_check_code((string)$google, $onecode, 1)) {
             return response()->json(['message' => '验证码测试通过 !', 'status' => TRUE,]);
         } else {
-            return response()->json(['message' => '验证码错误，请输入正确的谷歌验证码 !'.$onecode, 'status' => FALSE,]);
+            return response()->json(['message' => '验证码错误，请输入正确的谷歌验证码 !' . $onecode, 'status' => FALSE,]);
         }
     }
 
@@ -207,7 +239,7 @@ class AuthController extends BaseAuthController
                 $form->password = bcrypt($form->password);
             }
 
-            if (! $form->password) {
+            if (!$form->password) {
                 $form->deleteInput('password');
             }
         });

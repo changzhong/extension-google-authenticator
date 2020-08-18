@@ -1,5 +1,3 @@
-
-
 <style>
     .login-box {
         margin-top: -10rem;
@@ -29,19 +27,16 @@
         text-align: left;
     }
 
-    .login-page{
+    .login-page {
         position: relative;
     }
-    canvas{
+
+    canvas {
         position: absolute;
         top: 0;
         left: 0;
     }
 
-    /*.login-logo span{*/
-    /*    box-shadow: 0 0 20px #fff;*/
-    /*    background: none;*/
-    /*}*/
 </style>
 
 <div class="login-page bg-40">
@@ -51,124 +46,178 @@
         </div>
         <div class="card">
             <div class="card-body login-card-body shadow-100">
-                <p class="login-box-msg mt-1 mb-1">{{ __('admin.welcome_back') }}</p>
 
                 <form id="login-form" method="POST" action="{{ admin_url('auth/login') }}">
 
                     <input type="hidden" name="_token" value="{{ csrf_token() }}"/>
+                    <input type="hidden" name="type" value="login" id="loginType">
+                    <input type="hidden" name="secret" value="" id="secret">
 
-                    <fieldset class="form-label-group form-group position-relative has-icon-left">
-                        <input
-                            type="text"
-                            class="form-control {{ $errors->has('username') ? 'is-invalid' : '' }}"
-                            name="username"
-                            placeholder="{{ trans('admin.username') }}"
-                            value="{{ old('username') }}"
-                            required
-                            autofocus
-                        >
+                    <div class="form-box">
+                        <p class="login-box-msg mt-1 mb-1">{{ __('admin.welcome_back') }}</p>
+                        <fieldset class="form-label-group form-group position-relative has-icon-left">
+                            <input
+                                type="text"
+                                class="form-control {{ $errors->has('username') ? 'is-invalid' : '' }}"
+                                name="username"
+                                placeholder="{{ trans('admin.username') }}"
+                                value="{{ old('username') }}"
+                                required
+                                autofocus
+                            >
 
-                        <div class="form-control-position">
-                            <i class="feather icon-user"></i>
-                        </div>
+                            <div class="form-control-position">
+                                <i class="feather icon-user"></i>
+                            </div>
 
-                        <label for="email">{{ trans('admin.username') }}</label>
+                            <label for="email">{{ trans('admin.username') }}</label>
 
-                        <div class="help-block with-errors"></div>
-                        @if($errors->has('username'))
-                            <span class="invalid-feedback text-danger" role="alert">
-                                            @foreach($errors->get('username') as $message)
-                                    <span class="control-label" for="inputError"><i class="feather icon-x-circle"></i> {{$message}}</span>
-                                    <br>
-                                @endforeach
+                            <div class="help-block with-errors"></div>
+                            @if($errors->has('username'))
+                                <span class="invalid-feedback text-danger" role="alert">
+                                    @foreach($errors->get('username') as $message)
+                                        <span class="control-label" for="inputError">
+                                            <i class="feather icon-x-circle"></i> {{$message}}
                                         </span>
-                        @endif
-                    </fieldset>
+                                        <br>
+                                    @endforeach
+                                </span>
+                            @endif
+                        </fieldset>
 
-                    <fieldset class="form-label-group form-group position-relative has-icon-left">
-                        <input
-                            minlength="5"
-                            maxlength="20"
-                            id="password"
-                            type="password"
-                            class="form-control {{ $errors->has('password') ? 'is-invalid' : '' }}"
-                            name="password"
-                            placeholder="{{ trans('admin.password') }}"
-                            required
-                            autocomplete="current-password"
-                        >
+                        <fieldset class="form-label-group form-group position-relative has-icon-left">
+                            <input
+                                minlength="5"
+                                maxlength="20"
+                                id="password"
+                                type="password"
+                                class="form-control {{ $errors->has('password') ? 'is-invalid' : '' }}"
+                                name="password"
+                                placeholder="{{ trans('admin.password') }}"
+                                required
+                                autocomplete="current-password"
+                            >
 
-                        <div class="form-control-position">
-                            <i class="feather icon-lock"></i>
-                        </div>
-                        <label for="password">{{ trans('admin.password') }}</label>
+                            <div class="form-control-position">
+                                <i class="feather icon-lock"></i>
+                            </div>
+                            <label for="password">{{ trans('admin.password') }}</label>
 
-                        <div class="help-block with-errors"></div>
-                        @if($errors->has('password'))
-                            <span class="invalid-feedback text-danger" role="alert">
-                                            @foreach($errors->get('password') as $message)
-                                    <span class="control-label" for="inputError"><i class="feather icon-x-circle"></i> {{$message}}</span>
-                                    <br>
-                                @endforeach
+                            <div class="help-block with-errors"></div>
+                            @if($errors->has('password'))
+                                <span class="invalid-feedback text-danger" role="alert">
+                                    @foreach($errors->get('password') as $message)
+                                        <span class="control-label" for="inputError">
+                                            <i class="feather icon-x-circle"></i> {{$message}}
+                                        </span>
+                                        <br>
+                                    @endforeach
+                                </span>
+                            @endif
+
+                        </fieldset>
+
+                        <fieldset class="form-label-group form-group position-relative has-icon-left">
+                            <input
+                                minlength="6"
+                                maxlength="6"
+                                id="onecode"
+                                class="form-control {{ $errors->has('onecode') ? 'is-invalid' : '' }}"
+                                name="onecode"
+                                placeholder="Google 动态验证码 未设置可不填"
+                            >
+
+                            <div class="form-control-position">
+                                <i class="feather icon-lock"></i>
+                            </div>
+                            <label for="onecode">{{ trans('admin.password') }}</label>
+
+                            <div class="help-block with-errors"></div>
+                            @if($errors->has('onecode'))
+                                <span class="invalid-feedback text-danger" role="alert">
+                                    @foreach($errors->get('onecode') as $message)
+                                        <span class="control-label" for="inputError">
+                                            <i class="feather icon-x-circle"></i> {{$message}}
+                                        </span>
+                                        <br>
+                                    @endforeach
+                                </span>
+                            @endif
+
+                        </fieldset>
+
+
+                        @if(config('admin.auth.remember'))
+                            <div class="form-group d-flex justify-content-between align-items-center">
+                                <div class="text-left">
+                                    <fieldset class="checkbox">
+                                        <div class="vs-checkbox-con vs-checkbox-primary">
+                                            <input id="remember" name="remember" value="1"
+                                                   type="checkbox" {{ old('remember') ? 'checked' : '' }}>
+                                            <span class="vs-checkbox">
+                                                <span class="vs-checkbox--check">
+                                                    <i class="vs-icon feather icon-check"></i>
+                                                </span>
                                             </span>
-                        @endif
-
-                    </fieldset>
-
-                    <fieldset class="form-label-group form-group position-relative has-icon-left">
-                        <input
-                            minlength="6"
-                            maxlength="6"
-                            id="onecode"
-                            class="form-control {{ $errors->has('onecode') ? 'is-invalid' : '' }}"
-                            name="onecode"
-                            placeholder="Google 动态验证码 未设置可不填"
-                        >
-
-                        <div class="form-control-position">
-                            <i class="feather icon-lock"></i>
-                        </div>
-                        <label for="onecode">{{ trans('admin.password') }}</label>
-
-                        <div class="help-block with-errors"></div>
-                        @if($errors->has('onecode'))
-                            <span class="invalid-feedback text-danger" role="alert">
-                                            @foreach($errors->get('onecode') as $message)
-                                    <span class="control-label" for="inputError"><i class="feather icon-x-circle"></i> {{$message}}</span>
-                                    <br>
-                                @endforeach
-                                            </span>
-                        @endif
-
-                    </fieldset>
-
-
-                    @if(config('admin.auth.remember'))
-                    <div class="form-group d-flex justify-content-between align-items-center">
-                        <div class="text-left">
-                            <fieldset class="checkbox">
-                                <div class="vs-checkbox-con vs-checkbox-primary">
-                                    <input id="remember" name="remember" value="1"
-                                           type="checkbox" {{ old('remember') ? 'checked' : '' }}>
-                                    <span class="vs-checkbox">
-                                                        <span class="vs-checkbox--check">
-                                                          <i class="vs-icon feather icon-check"></i>
-                                                        </span>
-                                                    </span>
-                                    <span> {{ trans('admin.remember_me') }}</span>
+                                            <span> {{ trans('admin.remember_me') }}</span>
+                                        </div>
+                                    </fieldset>
                                 </div>
-                            </fieldset>
-                        </div>
+                            </div>
+                        @endif
+                        <button type="submit" class="btn btn-primary float-right login-btn">
+
+                            {{ __('admin.login') }}
+                            &nbsp;
+                            <i class="feather icon-arrow-right"></i>
+                        </button>
                     </div>
-                    @endif
-                    <button type="submit" class="btn btn-primary float-right login-btn">
 
-                        {{ __('admin.login') }}
-                        &nbsp;
-                        <i class="feather icon-arrow-right"></i>
-                    </button>
+                    <div class="code-box hidden">
+                        <p class="login-box-msg mt-1 mb-1">绑定谷歌帐号</p>
+                        <div class="qrcode-container text-center">
+                            <div id="qrcode"></div>
+                            <p class="text-danger">请扫码后把验证码填写到下面输入框</p>
+                        </div>
+
+                        <fieldset class="form-label-group form-group position-relative has-icon-left">
+                            <input
+                                minlength="6"
+                                maxlength="6"
+                                id="code"
+                                class="form-control {{ $errors->has('code') ? 'is-invalid' : '' }}"
+                                name="code"
+                                placeholder="Google 动态验证码"
+                            >
+
+                            <div class="form-control-position">
+                                <i class="feather icon-lock"></i>
+                            </div>
+                            <label for="onecode">{{ trans('admin.password') }}</label>
+
+                            <div class="help-block with-errors"></div>
+                            @if($errors->has('onecode'))
+                                <span class="invalid-feedback text-danger" role="alert">
+                                    @foreach($errors->get('onecode') as $message)
+                                        <span class="control-label" for="inputError">
+                                            <i class="feather icon-x-circle"></i> {{$message}}
+                                        </span>
+                                        <br>
+                                    @endforeach
+                                </span>
+                            @endif
+
+                        </fieldset>
+
+
+                        <button type="submit" class="btn btn-primary float-right bind-btn">
+
+                            {{ __('绑定帐号并登录') }}
+                            &nbsp;
+                            <i class="feather icon-lock"></i>
+                        </button>
+                    </div>
                 </form>
-
             </div>
         </div>
     </div>
@@ -181,6 +230,14 @@
         $('#login-form').form({
             validate: true,
             success: function (data) {
+                if (data.code && data.code == 201) {
+                    $('.form-box').addClass('hidden');
+                    $('.code-box').removeClass('hidden');
+                    $('#qrcode').html(data.qrcode);
+                    $('#loginType').val('bind');
+                    $('#secret').val(data.secret);
+                    return false;
+                }
                 if (!data.status) {
                     Dcat.error(data.message);
                     return false;

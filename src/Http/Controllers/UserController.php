@@ -22,6 +22,56 @@ use Illuminate\Support\Facades\DB;
 class UserController extends \Dcat\Admin\Controllers\UserController
 {
 
+    protected function grid()
+    {
+        return Grid::make(new Administrator('roles'), function (Grid $grid) {
+            $grid->id('ID')->sortable();
+            $grid->username;
+            $grid->name;
+            $grid->column('is_open_google_auth', '谷歌验证')->using(['否', '是'])->badge([1=>'success', 'default' => 'danger']);
+
+            if (config('admin.permission.enable')) {
+                $grid->roles->pluck('name')->label('primary', 3);
+
+                $permissionModel = config('admin.database.permissions_model');
+                $roleModel = config('admin.database.roles_model');
+                $nodes = (new $permissionModel())->allNodes();
+                $grid->permissions
+                    ->if(function () {
+                        return ! empty($this->roles);
+                    })
+                    ->showTreeInDialog(function (Grid\Displayers\DialogTree $tree) use (&$nodes, $roleModel) {
+                        $tree->nodes($nodes);
+
+                        foreach (array_column($this->roles, 'slug') as $slug) {
+                            if ($roleModel::isAdministrator($slug)) {
+                                $tree->checkAll();
+                            }
+                        }
+                    })
+                    ->else()
+                    ->emptyString();
+            }
+
+            $grid->created_at;
+            $grid->updated_at->sortable();
+
+            $grid->quickSearch(['id', 'name', 'username']);
+
+            $grid->disableBatchDelete();
+            $grid->showQuickEditButton();
+            $grid->disableFilterButton();
+            $grid->enableDialogCreate();
+
+            $grid->actions(function (Grid\Displayers\Actions $actions) {
+                if ($actions->getKey() == AdministratorModel::DEFAULT_ID) {
+                    $actions->disableDelete();
+                }
+            });
+        });
+    }
+
+
     /**
      * Edit interface.
      *
@@ -69,7 +119,10 @@ class UserController extends \Dcat\Admin\Controllers\UserController
             $form->text('name', trans('admin.name'))->required();
             $form->image('avatar', trans('admin.avatar'));
 
-            $form->hidden('is_open_google_auth')->value(1);
+            $form->switch('is_open_google_auth', '谷歌验证')->customFormat(function ($v) {
+                return $v == 1 ? 1 : 0;
+            })->default(1);
+//            $form->switch('is_open_google_auth')->->value(1);
 
             if ($id) {
                 $form->password('password', trans('admin.password'))
@@ -122,7 +175,7 @@ class UserController extends \Dcat\Admin\Controllers\UserController
     {
         $secret = $user->google_auth ?? '';
         $createSecret = google_create_secret(32,$secret, $user->username);
-        $box = new Box('Google 验证绑定',view(GoogleAuthenticator::NAME.'::google', ['createSecret' => $createSecret, 'id' => $user->id]) );
+        $box = new Box('Google 验证绑定',view(GoogleAuthenticator::NAME.'::google', ['createSecret' => $createSecret, 'id' => $user->id, 'google_auth' => $user->google_auth]) );
         $box->style('info');
         return $box->render();
 
