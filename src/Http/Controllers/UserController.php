@@ -5,6 +5,7 @@ namespace Dcat\Admin\Extension\GoogleAuthenticator\Http\Controllers;
 use Dcat\Admin\Admin;
 use Dcat\Admin\Auth\Permission;
 use Dcat\Admin\Extension\GoogleAuthenticator\GoogleAuthenticator;
+use Dcat\Admin\Extension\GoogleAuthenticator\Http\Grid\UnBind;
 use Dcat\Admin\Form;
 use Dcat\Admin\Grid;
 use Dcat\Admin\IFrameGrid;
@@ -29,6 +30,7 @@ class UserController extends \Dcat\Admin\Controllers\UserController
             $grid->username;
             $grid->name;
             $grid->column('is_open_google_auth', '谷歌验证')->using(['否', '是'])->badge([1=>'success', 'default' => 'danger']);
+            $grid->column('google_auth', '是否绑定')->action(\Dcat\Admin\Extension\GoogleAuthenticator\Grid\UnBind::class);
 
             if (config('admin.permission.enable')) {
                 $grid->roles->pluck('name')->label('primary', 3);
@@ -59,10 +61,9 @@ class UserController extends \Dcat\Admin\Controllers\UserController
             $grid->quickSearch(['id', 'name', 'username']);
 
             $grid->disableBatchDelete();
-            $grid->showQuickEditButton();
+//            $grid->showQuickEditButton();
             $grid->disableFilterButton();
             $grid->enableDialogCreate();
-
             $grid->actions(function (Grid\Displayers\Actions $actions) {
                 if ($actions->getKey() == AdministratorModel::DEFAULT_ID) {
                     $actions->disableDelete();

@@ -13,7 +13,8 @@
 
         <p>如果遇到问题，请参考：<a href="https://phpartisan.cn/specials/5" target="_blank">Google Authenticator帮助文档</a></p>
 
-        <p>当前服务器时间：<span class="text-red" id="txt"></span></p>
+        <p>本地时间：<span class="text-red" id="txt"></span></p>
+        <p>服务器时间：<span class="text-red" >{!! date('Y-m-d H:i:s') !!}</span></p>
         @if($google_auth)
             <div class="form-group form-group-label">
                 <div class="text-center">
@@ -38,51 +39,6 @@
 
     $(document).ready(function () {
 
-        $('.no_auth').on('click', function (e) {
-            $('#ga-enable').val(0);
-            $('#ga-enable').html($(this).html());
-        });
-
-        $('.yes_auth').on('click', function (e) {
-            $('#ga-enable').val(1);
-            $('#ga-enable').html($(this).html());
-
-        });
-
-        $('.test').on('click', function (e) {
-
-            $.ajax({
-                url: "{{ route('admin.GoogleAuthenticator')}}",
-                type: 'post',
-                data: {
-                    _token: Dcat.token,
-                    google: $("input[name='google']").val(),
-                    onecode: $("input[name='onecode']").val()
-                },
-                success: function (obj) {
-                    layer.alert(obj.message);
-                }
-            });
-
-        });
-        $('.success').on('click', function (e) {
-
-            $.ajax({
-                url: "{{ route('admin.setUserGoogleAuth') }}",
-                type: 'post',
-                data: {
-                    _token: Dcat.token,
-                    google: $("input[name='google']").val(),
-                    onecode: $("input[name='onecode']").val(),
-                    is_open_google_auth: $('#ga-enable').val(),
-                    id: '{{$id}}'
-                },
-                success: function (obj) {
-                    console.log(obj);
-                    $.pjax.reload('#pjax-container');
-                }
-            });
-        });
 
         $('#android').popover({
             trigger: 'hover',
@@ -114,15 +70,15 @@
         //s设置层txt的内容
         document.getElementById('txt').innerHTML = y + "-" + m + "-" + d + " " + h + ":" + mi + ":" + s;
         //过500毫秒再调用一次
-        t = setTimeout('startTime()', 500)
+        // t = setTimeout('startTime()', 500)
 
         //小于10，加0
-        function checkTime(i) {
-            if (i < 10) {
-                i = "0" + i
-            }
-            return i
-        }
+        // function checkTime(i) {
+        //     if (i < 10) {
+        //         i = "0" + i
+        //     }
+        //     return i
+        // }
     }
 
 
