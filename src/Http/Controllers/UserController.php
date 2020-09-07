@@ -19,6 +19,7 @@ use Dcat\Admin\Support\Helper;
 use Dcat\Admin\Widgets\Box;
 use Dcat\Admin\Widgets\Tree;
 use Illuminate\Support\Facades\DB;
+use Dcat\Admin\Extension\GoogleAuthenticator\Actions\Unbind as UnbindAction;
 
 class UserController extends \Dcat\Admin\Controllers\UserController
 {
@@ -105,6 +106,13 @@ class UserController extends \Dcat\Admin\Controllers\UserController
     public function form()
     {
         return Form::make(new Administrator('roles'), function (Form $form) {
+            if($form->model()->google_auth) {
+                $form->tools(function (Form\Tools $tools) {
+                // 添加一个按钮, 参数可以是字符串, 匿名函数, 或者实现了Renderable或Htmlable接口的对象实例
+                    $tools->append(new UnbindAction());
+            });
+            }
+
             $userTable = config('admin.database.users_table');
 
             $connection = config('admin.database.connection');

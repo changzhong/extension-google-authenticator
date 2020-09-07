@@ -11,7 +11,7 @@ class UnBind extends RowAction
     public function title()
     {
         $src = ($this->row->{$this->getColumnName()}) ? 'on' : 'off';
-        return '<img src="/vendors/dcat-admin-extensions/google-authenticator/images/switch_'.$src.'.png" style="width:39px;height:25px">';
+        return '<img src="/vendors/dcat-admin-extensions/google-authenticator/images/switch_'.$src.'.png" style="width:39px;height:25px;border-radius:16.5px;">';
     }
 
     public function handle(Request $request)
@@ -59,7 +59,7 @@ class UnBind extends RowAction
         if($row['google_auth']) {
             return [
                 "提示",
-                '确认为该用户解绑吗？',
+                '确认解绑【'.$row['username'].'】的谷歌验证吗？',
             ];
         }
 
