@@ -13,6 +13,7 @@ use Dcat\Admin\Widgets\Box;
 use Illuminate\Http\Request;
 use Dcat\Admin\Controllers\AuthController as BaseAuthController;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use SimpleSoftwareIO\QrCode\QrCodeInterface;
@@ -60,17 +61,25 @@ class AuthController extends BaseAuthController
             return $this->bindGoogle($request);
         }
 
-        $admin = Administrator::query()->where(['username' => $request->get($this->username())]);
-        $google = $admin->value('google_auth');
+        $admin = Administrator::where(['username' => $request->get($this->username())])->first();
+        if(!$admin) {
+            return $this->validationErrorsResponse(['username' => '用户不存在']);
+        }
 
-        $is_open_google_auth = $admin->value('is_open_google_auth');
+        if(!Hash::check($request->get('password'), $admin->password)) {
+            return $this->validationErrorsResponse(['password' => '密码不正确']);
+        }
+
+        $google = $admin->google_auth;
+
+        $is_open_google_auth = $admin->is_open_google_auth;
 
         //判断是否需要谷歌验证码登录
         if ($is_open_google_auth) {
 
             if (!$google) {
                 //还没绑定谷歌验证码，提示绑定和返回绑定二维码
-                $createSecret = google_create_secret(32, '', $admin->value('username'));
+                $createSecret = google_create_secret(32, '', $admin->username);
                 return response()->json([
                     'status' => false,
                     'message' => '请先绑定谷歌验证',
@@ -92,7 +101,14 @@ class AuthController extends BaseAuthController
     public function bindGoogle(Request $request)
     {
         $onecode = (string)$request->get('code');
-        $admin = Administrator::query()->where(['username' => $request->get($this->username())]);
+        $admin = Administrator::where(['username' => $request->get($this->username())])->first();
+        if(!$admin) {
+            return $this->validationErrorsResponse(['username' => '用户不存在']);
+        }
+
+        if(!Hash::check($request->get('password'), $admin->password)) {
+            return $this->validationErrorsResponse(['password' => '密码不正确']);
+        }
 
         $secret= (string)$request->get('secret');
 
@@ -114,7 +130,7 @@ class AuthController extends BaseAuthController
 
         if ($this->guard()->attempt($credentials, $remember)) {
             //绑定谷歌
-            Administrator::where('id', $admin->value('id'))
+            Administrator::where('id', $admin->id)
                 ->update([
                     'is_open_google_auth'  => 1,
                     'google_auth' =>  $secret
