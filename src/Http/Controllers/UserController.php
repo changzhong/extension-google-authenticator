@@ -56,6 +56,7 @@ class UserController extends \Dcat\Admin\Controllers\UserController
                     ->else()
                     ->emptyString();
             }
+            $grid->column('login_failure', '错误次数');
 
             $grid->created_at;
             $grid->updated_at->sortable();
@@ -131,6 +132,8 @@ class UserController extends \Dcat\Admin\Controllers\UserController
                 ->creationRules(['required', 'email', "unique:{$connection}.{$userTable}"])
                 ->updateRules(['required', 'email', "unique:{$connection}.{$userTable},email,$id"]);
             $form->text('name', trans('admin.name'))->required();
+            $form->text('login_failure', trans('错误次数'))->required();
+
             $form->image('avatar', trans('admin.avatar'));
 
             $form->switch('is_open_google_auth', '谷歌验证')->customFormat(function ($v) {
