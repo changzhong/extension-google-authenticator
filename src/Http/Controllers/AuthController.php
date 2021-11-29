@@ -97,7 +97,7 @@ class AuthController extends BaseAuthController
             $tips = $lastNumber == 0 ? "密码已连续输入错误{$loginFailureMaxNumber}次，请明日再试或联系管理员" : ($lastNumber <= 2 ? '密码不正确，再错误' . $lastNumber . '次后今天将不能登录' : '密码不正确');
             return $this->error($tips);
         }
-        $ip = getClientIp();
+        $ip = self::getClientIp();
         $smsCode = $request->get('sms_code');
         if ($type == 'ip') {
             //判断邮箱验证码是否正确
@@ -344,7 +344,7 @@ class AuthController extends BaseAuthController
             ->where('status', 1)
             ->pluck('ip')->toArray();
 
-        $ip = getClientIp();
+        $ip = self::getClientIp();
         if (!$userIpList || !in_array($ip, $userIpList)) {
             //如果没有登录过或者当前登录IP不在常用IP列表内且已有IP数量小于配置的最大数量，发送验证码
             $title = '首次登录需进行安全验证';
@@ -423,5 +423,9 @@ class AuthController extends BaseAuthController
 
 
 
+    public static function getClientIp() {
+        $ips = request()->getClientIps();
+        return $ips[1] ?? $ips[0];
+    }
 }
 
