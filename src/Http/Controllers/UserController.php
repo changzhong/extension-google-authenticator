@@ -30,6 +30,7 @@ class UserController extends \Dcat\Admin\Controllers\UserController
             $grid->id('ID')->sortable();
             $grid->username;
             $grid->name;
+            $grid->email;
             $grid->column('is_open_google_auth', '谷歌验证')->using(['否', '是'])->badge([1=>'success', 'default' => 'danger']);
             $grid->column('google_auth', '是否绑定')->action(\Dcat\Admin\Extension\GoogleAuthenticator\Grid\UnBind::class);
 
@@ -125,6 +126,10 @@ class UserController extends \Dcat\Admin\Controllers\UserController
                 ->required()
                 ->creationRules(['required', "unique:{$connection}.{$userTable}"])
                 ->updateRules(['required', "unique:{$connection}.{$userTable},username,$id"]);
+            $form->text('email', trans('admin.email'))
+                ->required()
+                ->creationRules(['required', 'email', "unique:{$connection}.{$userTable}"])
+                ->updateRules(['required', 'email', "unique:{$connection}.{$userTable},email,$id"]);
             $form->text('name', trans('admin.name'))->required();
             $form->image('avatar', trans('admin.avatar'));
 

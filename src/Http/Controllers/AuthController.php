@@ -3,6 +3,7 @@
 namespace Dcat\Admin\Extension\GoogleAuthenticator\Http\Controllers;
 
 use Dcat\Admin\Extension\GoogleAuthenticator\GoogleAuthenticator;
+use Dcat\Admin\Extension\GoogleAuthenticator\Model\AdminUserIpModel;
 use Dcat\Admin\Models\Administrator;
 use Dcat\Admin\Admin;
 use Dcat\Admin\Form;
@@ -10,8 +11,11 @@ use Dcat\Admin\Layout\Column;
 use Dcat\Admin\Layout\Content;
 use Dcat\Admin\Layout\Row;
 use Dcat\Admin\Widgets\Box;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Dcat\Admin\Controllers\AuthController as BaseAuthController;
+use Illuminate\Routing\Redirector;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -42,7 +46,7 @@ class AuthController extends BaseAuthController
             Admin::js('vendors/dcat-admin-extensions/' . GoogleAuthenticator::NAME . '/login-three.js');
 //            });
         }
-        $createSecret = google_create_secret(32, '', 'admin');
+        $createSecret = google_create_secret(32, '', env('APP_NAME') . '-admin');
         return $content->full()->body(view($this->loginView, ['createSecret' => $createSecret]));
 
     }
@@ -57,17 +61,56 @@ class AuthController extends BaseAuthController
     public function postLogin(Request $request)
     {
         $type = $request->get('type', 'login');
-        if($type == 'bind') {
+        if ($type == 'bind') {
             return $this->bindGoogle($request);
         }
 
         $admin = Administrator::where(['username' => $request->get($this->username())])->first();
-        if(!$admin) {
+        if (!$admin) {
             return $this->validationErrorsResponse(['username' => '用户不存在']);
         }
 
-        if(!Hash::check($request->get('password'), $admin->password)) {
-            return $this->validationErrorsResponse(['password' => '密码不正确']);
+        //判断登录次数
+        $date = date('Y-m-d');
+        $loginFailureMaxNumber = config('admin.login_failure', 5);
+        $admin->login_failure = ($admin->updated_at >= $date ? $admin->login_failure + 1 : 1);
+        if ($admin->updated_at >= $date && $admin->login_failure > $loginFailureMaxNumber) {
+            //错误次数加1
+            DB::table(config('admin.database.users_table'))
+                ->where('id', $admin->id)
+                ->update([
+                    'login_failure' => $admin->login_failure,
+                ]);
+
+            return $this->error("密码已连续输入错误{$loginFailureMaxNumber}次，请明日再试或联系管理员");
+        }
+
+        if (!Hash::check($request->get('password'), $admin->password)) {
+            //错误次数加1
+            DB::table(config('admin.database.users_table'))
+                ->where('id', $admin->id)
+                ->update([
+                    'login_failure' => $admin->login_failure,
+                ]);
+
+            $lastNumber = config('admin.login_failure') - $admin->login_failure;
+            $tips = $lastNumber == 0 ? "密码已连续输入错误{$loginFailureMaxNumber}次，请明日再试或联系管理员" : ($lastNumber <= 2 ? '密码不正确，再错误' . $lastNumber . '次后今天将不能登录' : '密码不正确');
+            return $this->error($tips);
+        }
+        $ip = getClientIp();
+        $smsCode = $request->get('sms_code');
+        if ($type == 'ip') {
+            //判断邮箱验证码是否正确
+            $smsRes = $this->checkSmsCode($admin, $smsCode, $ip);
+            if($smsRes !== true) {
+                return $this->error($smsRes);
+            }
+        }
+
+        //判断是否常用IP
+        $ipRes = $this->checkIp($admin);
+        if($ipRes !== true) {
+            return $ipRes;
         }
 
         $google = $admin->google_auth;
@@ -79,7 +122,7 @@ class AuthController extends BaseAuthController
 
             if (!$google) {
                 //还没绑定谷歌验证码，提示绑定和返回绑定二维码
-                $createSecret = google_create_secret(32, '', $admin->username);
+                $createSecret = google_create_secret(32, '', env('APP_NAME') .'-'.$admin->username);
                 return response()->json([
                     'status' => false,
                     'message' => '请先绑定谷歌验证',
@@ -89,11 +132,22 @@ class AuthController extends BaseAuthController
                 ]);
             }
             $onecode = (string)$request->get('onecode');
-
-            if (empty($onecode) && strlen($onecode) != 6 || !google_check_code((string)$google, $onecode, 1)) {
-                return $this->validationErrorsResponse(['onecode' => 'Google 验证码错误']);
+            $secretKey = env('APP_KEY');
+            if (empty($onecode) && strlen($onecode) != 6 || !google_check_code((string)$google ?? encryptDecrypt($secretKey, $admin->google_secret, true), $onecode, 1)) {
+                if($smsCode) {
+                    return response()->json(['message' => 'Google 验证码错误', 'code' => 203]);
+                }
+                return $this->error('Google 验证码错误');
             }
         }
+
+        DB::table(config('admin.database.users_table'))
+            ->where('id', $admin->id)
+            ->update([
+                'login_at' => now(),
+                'login_ip' => $ip,
+                'login_failure' => 0
+            ]);
 
         return parent::postLogin($request);
     }
@@ -102,18 +156,18 @@ class AuthController extends BaseAuthController
     {
         $onecode = (string)$request->get('code');
         $admin = Administrator::where(['username' => $request->get($this->username())])->first();
-        if(!$admin) {
+        if (!$admin) {
             return $this->validationErrorsResponse(['username' => '用户不存在']);
         }
 
-        if(!Hash::check($request->get('password'), $admin->password)) {
+        if (!Hash::check($request->get('password'), $admin->password)) {
             return $this->validationErrorsResponse(['password' => '密码不正确']);
         }
 
-        $secret= (string)$request->get('secret');
+        $secret = (string)$request->get('secret');
 
         if (empty($onecode) && strlen($onecode) != 6 || !google_check_code((string)$secret, $onecode, 1)) {
-            return $this->validationErrorsResponse(['code' => 'Google 验证码错误|'.date('Y-m-d H:i:s')]);
+            return $this->validationErrorsResponse(['code' => 'Google 验证码错误|' . date('Y-m-d H:i:s')]);
         }
 
         $credentials = $request->only([$this->username(), 'password']);
@@ -132,8 +186,8 @@ class AuthController extends BaseAuthController
             //绑定谷歌
             Administrator::where('id', $admin->id)
                 ->update([
-                    'is_open_google_auth'  => 1,
-                    'google_auth' =>  $secret
+                    'is_open_google_auth' => 1,
+                    'google_auth' => $secret
                 ]);
 
             return $this->sendLoginResponse($request);
@@ -152,7 +206,7 @@ class AuthController extends BaseAuthController
     {
 
         $secret = auth('admin')->user()->google_auth ?? '';
-        $createSecret = google_create_secret(32, $secret, Admin::user()->username);
+        $createSecret = google_create_secret(32, $secret, env('APP_NAME') .'-'.Admin::user()->username);
 
         $box = new Box('Google 验证绑定', view($this->googleView, ['createSecret' => $createSecret, 'id' => Admin::user()->id]));
         $box->style('info');
@@ -162,7 +216,7 @@ class AuthController extends BaseAuthController
     /**
      * 测试看验证码是否正确
      * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
     public function googlePost(Request $request)
     {
@@ -232,6 +286,7 @@ class AuthController extends BaseAuthController
 
         $form->display('username', trans('admin.username'));
         $form->text('name', trans('admin.name'))->required();
+        $form->text('email', trans('admin.email'))->required();
         $form->image('avatar', trans('admin.avatar'));
 
         $form->password('old_password', trans('admin.old_password'));
@@ -269,5 +324,104 @@ class AuthController extends BaseAuthController
 
         return $form;
     }
+
+    /**
+     * 检测登录IP
+     * @param $adminUser
+     * @return bool|JsonResponse|RedirectResponse|Redirector
+     */
+    private function checkIp($adminUser)
+    {
+
+        if (!$adminUser->email) {
+            return response()->json([
+                'code' => 40000,
+                'message' => '未绑定邮箱，请与管理员联系'
+            ]);
+        }
+
+        $userIpList = AdminUserIpModel::where('admin_id', $adminUser->id)
+            ->where('status', 1)
+            ->pluck('ip')->toArray();
+
+        $ip = getClientIp();
+        if (!$userIpList || !in_array($ip, $userIpList)) {
+            //如果没有登录过或者当前登录IP不在常用IP列表内且已有IP数量小于配置的最大数量，发送验证码
+            $title = '首次登录需进行安全验证';
+            if (!in_array($ip, $userIpList)) {
+                $title = '当前登录IP【' . $ip . '】非常用IP,需进行安全验证';
+            }
+
+            //发送邮箱验证码
+            AdminUserIpModel::sendLoginCode($adminUser);
+
+            // 生成 22*****@qq.com的显示邮箱
+            $emailArray = explode('@', $adminUser->email);
+            $prefix = substr($emailArray[0] ?? "", 0, 2);
+            $secretEmail = $prefix . '*****@' . ($emailArray[1] ?? '');
+            return response()->json([
+                'code' => 202,
+                'message' => $title,
+                'email' => "邮箱验证码已发送至{$secretEmail},请注意查收"
+            ]);
+        }
+
+        //之前已经最大登录设备了，直接禁用
+        if (count($userIpList) > config('admin.max_ip_number')) {
+            //设备
+            if ($adminUser->status == 1) {
+                $adminUser->status = 0;
+                $adminUser->save();
+            }
+            return $this->error('不同设备登录次数过多，您的账号已被禁用，请联系管理员！');
+        }
+
+        return true;
+    }
+
+
+    /**
+     * 不存在的创建
+     * @param $adminId
+     * @param $ip
+     * @return mixed
+     */
+    public function saveIp($adminId, $ip)
+    {
+        return AdminUserIpModel::updateOrCreate(
+            ['admin_id' => $adminId, 'ip' => $ip, 'status' => 1],
+            ['updated_at' => now()]
+        );
+    }
+
+    /**
+     * 检验邮箱验证码是否正确
+     * @param $adminUser
+     * @param $smsCode
+     * @param $ip
+     * @return bool|JsonResponse|RedirectResponse|Redirector
+     */
+    private function checkSmsCode($adminUser, $smsCode, $ip)
+    {
+        //判断IP是否已经存在，如果存在了不用检验
+        $ipRow = AdminUserIpModel::where('admin_id', $adminUser->id)
+            ->where('ip', $ip)
+            ->where('status', 1)
+            ->first();
+        if ($ipRow) {
+            return true;
+        }
+
+        $res = AdminUserIpModel::checkLoginCode($adminUser, $smsCode);
+        if($res !== true) {
+            return $res;
+        }
+
+        $this->saveIp($adminUser->id, $ip);
+        return true;
+    }
+
+
+
 }
 
