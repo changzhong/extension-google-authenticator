@@ -369,8 +369,8 @@ class AuthController extends BaseAuthController
         //之前已经最大登录设备了，直接禁用
         if (count($userIpList) > config('admin.max_ip_number')) {
             //设备
-            if ($adminUser->status == 1) {
-                $adminUser->status = 0;
+            if ($adminUser->enabled == 1) {
+                $adminUser->enabled = 0;
                 $adminUser->save();
             }
             return $this->error('不同设备登录次数过多，您的账号已被禁用，请联系管理员！');
