@@ -2,6 +2,7 @@
 
 namespace Dcat\Admin\Extension\GoogleAuthenticator;
 
+use Dcat\Admin\Admin;
 use Dcat\Admin\Extension\GoogleAuthenticator\Http\Controllers\GoogleAuthenticatorController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\ServiceProvider;
@@ -39,6 +40,7 @@ class GoogleAuthenticatorServiceProvider extends ServiceProvider
         $this->app->booted(function () use ($extension) {
             $extension->routes(__DIR__.'/../routes/web.php');
         });
+
 
     }
 

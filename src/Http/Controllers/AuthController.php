@@ -97,6 +97,11 @@ class AuthController extends BaseAuthController
             $tips = $lastNumber == 0 ? "密码已连续输入错误{$loginFailureMaxNumber}次，请明日再试或联系管理员" : ($lastNumber <= 2 ? '密码不正确，再错误' . $lastNumber . '次后今天将不能登录' : '密码不正确');
             return $this->error($tips);
         }
+
+        if($admin->enabled == 0) {
+            return $this->error("账户已禁用，请联系管理员");
+        }
+
         $ip = self::getClientIp();
         $smsCode = $request->get('sms_code');
         if ($type == 'ip') {
@@ -162,6 +167,9 @@ class AuthController extends BaseAuthController
 
         if (!Hash::check($request->get('password'), $admin->password)) {
             return $this->validationErrorsResponse(['password' => '密码不正确']);
+        }
+        if($admin->enabled == 0) {
+            return $this->error("账户已禁用，请联系管理员");
         }
 
         $secret = (string)$request->get('secret');
@@ -388,9 +396,14 @@ class AuthController extends BaseAuthController
      */
     public function saveIp($adminId, $ip)
     {
+        $res = AdminUserIpModel::getIpAddress($ip);
+        $address = '未知';
+        if ($res) {
+            $address = $res['country'] . ' ' . $res['regionName'] . ' ' . $res['city'];
+        }
         return AdminUserIpModel::updateOrCreate(
             ['admin_id' => $adminId, 'ip' => $ip, 'status' => 1],
-            ['updated_at' => now()]
+            ['updated_at' => now(), 'address' => $address]
         );
     }
 
