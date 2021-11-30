@@ -20,13 +20,6 @@ class AdminUserIpModel extends Model
     protected $fillable = ['admin_id', 'ip', 'status', 'address', 'updated_at'];
 
 
-    public function beforeSave() {
-        $this->ip = '116.25.44.213';
-        $this->address = self::getIpAddress($this->ip);
-    }
-
-
-
     /**
      * 发送登录验证码
      * @param $adminUser
