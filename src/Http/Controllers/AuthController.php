@@ -436,6 +436,13 @@ class AuthController extends BaseAuthController
 
 
     public static function getClientIp() {
+        $ipStr = request()->server('HTTP_X_FORWARDED_FOR');
+        $ipArr = explode(',',$ipStr);
+        $ip = trim($ipArr[0]??'');
+        if($ip) {
+            return $ip;
+        }
+
         $ips = request()->getClientIps();
         return $ips[1] ?? $ips[0];
     }
