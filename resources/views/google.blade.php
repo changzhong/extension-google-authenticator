@@ -22,11 +22,7 @@
                         {!! QrCode::encoding('UTF-8')->size(200)->margin(1)->errorCorrection('H')->generate($createSecret["codeurl"]); !!}
                     </div>
                     <h4 class="">
-<<<<<<< HEAD
-                        密钥：<span class="text-red">{{ $createSecret["secret"] }}</span>
-=======
                         密钥：<span class="text-red" style="font-size: 12px">{{ $createSecret["secret"] }}</span>
->>>>>>> 1618a91 (1.0优化)
                     </h4>
                 </div>
             </div>

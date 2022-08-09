@@ -36,23 +36,6 @@
         top: 0;
         left: 0;
     }
-
-<<<<<<< HEAD
-    .sms-box .title{
-        font-size: 2rem;
-
-    }
-    .sms-box p.text-danger{
-        margin-bottom: 0;
-    }
-
-    .sms-box p.text-gray{
-        font-size: 10px !important;
-    }
-=======
-
-
->>>>>>> 1618a91 (1.0优化)
 </style>
 
 <div class="login-page bg-40">
@@ -233,38 +216,6 @@
                             <i class="feather icon-lock"></i>
                         </button>
                     </div>
-<<<<<<< HEAD
-                    <div class=" sms-box hidden">
-                        <p class="title text-left">邮箱验证</p>
-                        <p class="text-danger  text-left">当前非常用IP登录,需进行安全验证</p>
-                        <p class="text-gray text-sm" id="emailText">请输入绑定邮箱收到的验证码</p>
-
-
-                        <fieldset class="form-label-group form-group position-relative has-icon-left">
-                            <input
-                                minlength="6"
-                                maxlength="6"
-                                id="sms_code"
-                                class="form-control {{ $errors->has('sms_code') ? 'is-invalid' : '' }}"
-                                name="sms_code"
-                                placeholder="请输入邮箱验证码"
-                            >
-
-                            <div class="form-control-position">
-                                <i class="feather icon-lock"></i>
-                            </div>
-
-                        </fieldset>
-
-
-                        <button type="submit" class="btn btn-primary float-right bind-btn">
-                            {{ __('验证') }}
-                        </button>
-                    </div>
-=======
-
-
->>>>>>> 1618a91 (1.0优化)
                 </form>
             </div>
         </div>
@@ -280,44 +231,25 @@
             success: function (data) {
                 if (data.code && data.code == 201) {
                     $('.form-box').addClass('hidden');
-<<<<<<< HEAD
-                    $('.sms-box').addClass('hidden');
-=======
->>>>>>> 1618a91 (1.0优化)
                     $('.code-box').removeClass('hidden');
                     $('#qrcode').html(data.qrcode);
                     $('#loginType').val('bind');
                     $('#secret').val(data.secret);
-<<<<<<< HEAD
-                    $('#sms_code').val('');
                     return false;
                 }
 
                 if (data.code && data.code == 202) {
                     $('.form-box').addClass('hidden');
                     $('.code-box').addClass('hidden');
-                    $('.sms-box').removeClass('hidden');
                     $('#emailText').text(data.email);
                     $('#loginType').val('ip');
                     return false;
                 }
 
                 if (data.code && data.code == 203) {
-                    $('.sms-box').addClass('hidden');
                     $('.code-box').addClass('hidden');
                     $('.form-box').removeClass('hidden');
                     $('#loginType').val('login');
-                    $('#sms_code').val('');
-=======
-                    return false;
-                }
-
-
-                if (data.code && data.code == 203) {
-                    $('.code-box').addClass('hidden');
-                    $('.form-box').removeClass('hidden');
-                    $('#loginType').val('login');
->>>>>>> 1618a91 (1.0优化)
                     Dcat.error(data.message);
                     return false;
                 }
