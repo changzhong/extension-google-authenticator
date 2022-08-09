@@ -70,6 +70,7 @@ class AuthController extends BaseAuthController
             return $this->validationErrorsResponse(['username' => '用户不存在']);
         }
 
+<<<<<<< HEAD
         //判断登录次数
         $date = date('Y-m-d');
         $loginFailureMaxNumber = config('admin.login_failure', 5);
@@ -120,6 +121,13 @@ class AuthController extends BaseAuthController
 
         $google = $admin->google_auth;
 
+=======
+        if ($admin->enabled == 0) {
+            return $this->error("账户已禁用，请联系管理员");
+        }
+
+        $google = $admin->google_auth;
+>>>>>>> 1618a91 (1.0优化)
         $is_open_google_auth = $admin->is_open_google_auth;
 
         //判断是否需要谷歌验证码登录
@@ -127,7 +135,11 @@ class AuthController extends BaseAuthController
 
             if (!$google) {
                 //还没绑定谷歌验证码，提示绑定和返回绑定二维码
+<<<<<<< HEAD
                 $createSecret = google_create_secret(32, '', env('APP_NAME') .'-'.$admin->username);
+=======
+                $createSecret = google_create_secret(32, '', env('APP_NAME') . '-' . $admin->username);
+>>>>>>> 1618a91 (1.0优化)
                 return response()->json([
                     'status' => false,
                     'message' => '请先绑定谷歌验证',
@@ -139,13 +151,18 @@ class AuthController extends BaseAuthController
             $onecode = (string)$request->get('onecode');
             $secretKey = env('APP_KEY');
             if (empty($onecode) && strlen($onecode) != 6 || !google_check_code((string)$google ?? encryptDecrypt($secretKey, $admin->google_secret, true), $onecode, 1)) {
+<<<<<<< HEAD
                 if($smsCode) {
+=======
+                if ($smsCode) {
+>>>>>>> 1618a91 (1.0优化)
                     return response()->json(['message' => 'Google 验证码错误', 'code' => 203]);
                 }
                 return $this->error('Google 验证码错误');
             }
         }
 
+<<<<<<< HEAD
         DB::table(config('admin.database.users_table'))
             ->where('id', $admin->id)
             ->update([
@@ -154,6 +171,8 @@ class AuthController extends BaseAuthController
                 'login_failure' => 0
             ]);
 
+=======
+>>>>>>> 1618a91 (1.0优化)
         return parent::postLogin($request);
     }
 
@@ -168,7 +187,11 @@ class AuthController extends BaseAuthController
         if (!Hash::check($request->get('password'), $admin->password)) {
             return $this->validationErrorsResponse(['password' => '密码不正确']);
         }
+<<<<<<< HEAD
         if($admin->enabled == 0) {
+=======
+        if ($admin->enabled == 0) {
+>>>>>>> 1618a91 (1.0优化)
             return $this->error("账户已禁用，请联系管理员");
         }
 
@@ -214,7 +237,11 @@ class AuthController extends BaseAuthController
     {
 
         $secret = auth('admin')->user()->google_auth ?? '';
+<<<<<<< HEAD
         $createSecret = google_create_secret(32, $secret, env('APP_NAME') .'-'.Admin::user()->username);
+=======
+        $createSecret = google_create_secret(32, $secret, env('APP_NAME') . '-' . Admin::user()->username);
+>>>>>>> 1618a91 (1.0优化)
 
         $box = new Box('Google 验证绑定', view($this->googleView, ['createSecret' => $createSecret, 'id' => Admin::user()->id]));
         $box->style('info');
@@ -332,6 +359,7 @@ class AuthController extends BaseAuthController
         return $form;
     }
 
+<<<<<<< HEAD
     /**
      * 检测登录IP
      * @param $adminUser
@@ -446,5 +474,7 @@ class AuthController extends BaseAuthController
         $ips = request()->getClientIps();
         return $ips[1] ?? $ips[0];
     }
+=======
+>>>>>>> 1618a91 (1.0优化)
 }
 
