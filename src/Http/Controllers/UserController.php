@@ -57,11 +57,6 @@ class UserController extends \Dcat\Admin\Controllers\UserController
                     ->else()
                     ->emptyString();
             }
-
-<<<<<<< HEAD
-            $grid->column('login_failure', '错误次数');
-=======
->>>>>>> 1618a91 (1.0优化)
             $grid->created_at;
             $grid->updated_at->sortable();
 
@@ -131,27 +126,13 @@ class UserController extends \Dcat\Admin\Controllers\UserController
                 ->required()
                 ->creationRules(['required', "unique:{$connection}.{$userTable}"])
                 ->updateRules(['required', "unique:{$connection}.{$userTable},username,$id"]);
-<<<<<<< HEAD
-            $form->text('email', trans('admin.email'))
-                ->required()
-                ->creationRules(['required', 'email', "unique:{$connection}.{$userTable}"])
-                ->updateRules(['required', 'email', "unique:{$connection}.{$userTable},email,$id"]);
             $form->text('name', trans('admin.name'))->required();
             $form->radio('enabled', '禁用')->options([0 => '是', 1 => '否'])->default(1);
-            $form->text('login_failure', trans('错误次数'))->required();
-=======
-            $form->text('name', trans('admin.name'))->required();
-            $form->radio('enabled', '禁用')->options([0 => '是', 1 => '否'])->default(1);
->>>>>>> 1618a91 (1.0优化)
             $form->image('avatar', trans('admin.avatar'));
 
             $form->switch('is_open_google_auth', '谷歌验证')->customFormat(function ($v) {
                 return $v == 1 ? 1 : 0;
             })->default(1);
-<<<<<<< HEAD
-//            $form->switch('is_open_google_auth')->->value(1);
-=======
->>>>>>> 1618a91 (1.0优化)
 
             if ($id) {
                 $form->password('password', trans('admin.password'))

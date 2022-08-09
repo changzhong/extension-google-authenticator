@@ -70,64 +70,12 @@ class AuthController extends BaseAuthController
             return $this->validationErrorsResponse(['username' => '用户不存在']);
         }
 
-<<<<<<< HEAD
-        //判断登录次数
-        $date = date('Y-m-d');
-        $loginFailureMaxNumber = config('admin.login_failure', 5);
-        $admin->login_failure = ($admin->updated_at >= $date ? $admin->login_failure + 1 : 1);
-        if ($admin->updated_at >= $date && $admin->login_failure > $loginFailureMaxNumber) {
-            //错误次数加1
-            DB::table(config('admin.database.users_table'))
-                ->where('id', $admin->id)
-                ->update([
-                    'login_failure' => $admin->login_failure,
-                ]);
-
-            return $this->error("密码已连续输入错误{$loginFailureMaxNumber}次，请明日再试或联系管理员");
-        }
-
-        if (!Hash::check($request->get('password'), $admin->password)) {
-            //错误次数加1
-            DB::table(config('admin.database.users_table'))
-                ->where('id', $admin->id)
-                ->update([
-                    'login_failure' => $admin->login_failure,
-                ]);
-
-            $lastNumber = config('admin.login_failure') - $admin->login_failure;
-            $tips = $lastNumber == 0 ? "密码已连续输入错误{$loginFailureMaxNumber}次，请明日再试或联系管理员" : ($lastNumber <= 2 ? '密码不正确，再错误' . $lastNumber . '次后今天将不能登录' : '密码不正确');
-            return $this->error($tips);
-        }
-
         if($admin->enabled == 0) {
             return $this->error("账户已禁用，请联系管理员");
         }
 
-        $ip = self::getClientIp();
-        $smsCode = $request->get('sms_code');
-        if ($type == 'ip') {
-            //判断邮箱验证码是否正确
-            $smsRes = $this->checkSmsCode($admin, $smsCode, $ip);
-            if($smsRes !== true) {
-                return $this->error($smsRes);
-            }
-        }
-
-        //判断是否常用IP
-        $ipRes = $this->checkIp($admin);
-        if($ipRes !== true) {
-            return $ipRes;
-        }
 
         $google = $admin->google_auth;
-
-=======
-        if ($admin->enabled == 0) {
-            return $this->error("账户已禁用，请联系管理员");
-        }
-
-        $google = $admin->google_auth;
->>>>>>> 1618a91 (1.0优化)
         $is_open_google_auth = $admin->is_open_google_auth;
 
         //判断是否需要谷歌验证码登录
@@ -135,11 +83,7 @@ class AuthController extends BaseAuthController
 
             if (!$google) {
                 //还没绑定谷歌验证码，提示绑定和返回绑定二维码
-<<<<<<< HEAD
-                $createSecret = google_create_secret(32, '', env('APP_NAME') .'-'.$admin->username);
-=======
                 $createSecret = google_create_secret(32, '', env('APP_NAME') . '-' . $admin->username);
->>>>>>> 1618a91 (1.0优化)
                 return response()->json([
                     'status' => false,
                     'message' => '请先绑定谷歌验证',
@@ -151,28 +95,13 @@ class AuthController extends BaseAuthController
             $onecode = (string)$request->get('onecode');
             $secretKey = env('APP_KEY');
             if (empty($onecode) && strlen($onecode) != 6 || !google_check_code((string)$google ?? encryptDecrypt($secretKey, $admin->google_secret, true), $onecode, 1)) {
-<<<<<<< HEAD
-                if($smsCode) {
-=======
                 if ($smsCode) {
->>>>>>> 1618a91 (1.0优化)
                     return response()->json(['message' => 'Google 验证码错误', 'code' => 203]);
                 }
                 return $this->error('Google 验证码错误');
             }
         }
 
-<<<<<<< HEAD
-        DB::table(config('admin.database.users_table'))
-            ->where('id', $admin->id)
-            ->update([
-                'login_at' => now(),
-                'login_ip' => $ip,
-                'login_failure' => 0
-            ]);
-
-=======
->>>>>>> 1618a91 (1.0优化)
         return parent::postLogin($request);
     }
 
@@ -187,11 +116,7 @@ class AuthController extends BaseAuthController
         if (!Hash::check($request->get('password'), $admin->password)) {
             return $this->validationErrorsResponse(['password' => '密码不正确']);
         }
-<<<<<<< HEAD
-        if($admin->enabled == 0) {
-=======
         if ($admin->enabled == 0) {
->>>>>>> 1618a91 (1.0优化)
             return $this->error("账户已禁用，请联系管理员");
         }
 
@@ -237,12 +162,7 @@ class AuthController extends BaseAuthController
     {
 
         $secret = auth('admin')->user()->google_auth ?? '';
-<<<<<<< HEAD
         $createSecret = google_create_secret(32, $secret, env('APP_NAME') .'-'.Admin::user()->username);
-=======
-        $createSecret = google_create_secret(32, $secret, env('APP_NAME') . '-' . Admin::user()->username);
->>>>>>> 1618a91 (1.0优化)
-
         $box = new Box('Google 验证绑定', view($this->googleView, ['createSecret' => $createSecret, 'id' => Admin::user()->id]));
         $box->style('info');
         return $box->render();
@@ -359,122 +279,6 @@ class AuthController extends BaseAuthController
         return $form;
     }
 
-<<<<<<< HEAD
-    /**
-     * 检测登录IP
-     * @param $adminUser
-     * @return bool|JsonResponse|RedirectResponse|Redirector
-     */
-    private function checkIp($adminUser)
-    {
 
-        if (!$adminUser->email) {
-            return response()->json([
-                'code' => 40000,
-                'message' => '未绑定邮箱，请与管理员联系'
-            ]);
-        }
-
-        $userIpList = AdminUserIpModel::where('admin_id', $adminUser->id)
-            ->where('status', 1)
-            ->pluck('ip')->toArray();
-
-        $ip = self::getClientIp();
-        if (!$userIpList || !in_array($ip, $userIpList)) {
-            //如果没有登录过或者当前登录IP不在常用IP列表内且已有IP数量小于配置的最大数量，发送验证码
-            $title = '首次登录需进行安全验证';
-            if (!in_array($ip, $userIpList)) {
-                $title = '当前登录IP【' . $ip . '】非常用IP,需进行安全验证';
-            }
-
-            //发送邮箱验证码
-            AdminUserIpModel::sendLoginCode($adminUser);
-
-            // 生成 22*****@qq.com的显示邮箱
-            $emailArray = explode('@', $adminUser->email);
-            $prefix = substr($emailArray[0] ?? "", 0, 2);
-            $secretEmail = $prefix . '*****@' . ($emailArray[1] ?? '');
-            return response()->json([
-                'code' => 202,
-                'message' => $title,
-                'email' => "邮箱验证码已发送至{$secretEmail},请注意查收"
-            ]);
-        }
-
-        //之前已经最大登录设备了，直接禁用
-        if (count($userIpList) > config('admin.max_ip_number')) {
-            //设备
-            if ($adminUser->enabled == 1) {
-                $adminUser->enabled = 0;
-                $adminUser->save();
-            }
-            return $this->error('不同设备登录次数过多，您的账号已被禁用，请联系管理员！');
-        }
-
-        return true;
-    }
-
-
-    /**
-     * 不存在的创建
-     * @param $adminId
-     * @param $ip
-     * @return mixed
-     */
-    public function saveIp($adminId, $ip)
-    {
-        $res = AdminUserIpModel::getIpAddress($ip);
-        $address = '未知';
-        if ($res) {
-            $address = $res['country'] . ' ' . $res['regionName'] . ' ' . $res['city'];
-        }
-        return AdminUserIpModel::updateOrCreate(
-            ['admin_id' => $adminId, 'ip' => $ip, 'status' => 1],
-            ['updated_at' => now(), 'address' => $address]
-        );
-    }
-
-    /**
-     * 检验邮箱验证码是否正确
-     * @param $adminUser
-     * @param $smsCode
-     * @param $ip
-     * @return bool|JsonResponse|RedirectResponse|Redirector
-     */
-    private function checkSmsCode($adminUser, $smsCode, $ip)
-    {
-        //判断IP是否已经存在，如果存在了不用检验
-        $ipRow = AdminUserIpModel::where('admin_id', $adminUser->id)
-            ->where('ip', $ip)
-            ->where('status', 1)
-            ->first();
-        if ($ipRow) {
-            return true;
-        }
-
-        $res = AdminUserIpModel::checkLoginCode($adminUser, $smsCode);
-        if($res !== true) {
-            return $res;
-        }
-
-        $this->saveIp($adminUser->id, $ip);
-        return true;
-    }
-
-
-
-    public static function getClientIp() {
-        $ipStr = request()->server('HTTP_X_FORWARDED_FOR');
-        $ipArr = explode(',',$ipStr);
-        $ip = trim($ipArr[0]??'');
-        if($ip) {
-            return $ip;
-        }
-
-        $ips = request()->getClientIps();
-        return $ips[1] ?? $ips[0];
-    }
-=======
->>>>>>> 1618a91 (1.0优化)
 }
 
