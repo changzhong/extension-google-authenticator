@@ -10,7 +10,7 @@
 
 #### 3. 更改数据库 
 ```
-php artisan migrate
+php artisan migrate --path=vendor/changzhong/extension-google-authenticator/database/migrations/2019_11_21_120702_add_google_auth_to_admin_users_table.php
 ```
 
 #### 4. 更改app/Admin/Controllers/AuthController.php
